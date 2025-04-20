@@ -12,31 +12,40 @@ struct ConstructorsListView: View {
     
     var body: some View {
         NavigationView {
-            Group {
-                if vm.isLoading {
-                    ProgressView("Loading…")
-                } else if let error = vm.errorMessage {
-                    Text("Error: \(error)")
-                        .foregroundColor(.red)
-                } else {
-                    List(vm.constructorStandings, id: \.constructor.constructorId) { standing in
-                        HStack {
-                            Text("\(standing.position).")
-                            Text(standing.constructor.name)
-                                .font(.headline)
-                            Spacer()
-                            Text("\(standing.points) pts")
-                        }
+            List(vm.topConstructors, id: \.constructor.constructorId) { standing in
+                HStack(spacing: 16) {
+                    Image(systemName: "trophy.fill")
+                        .foregroundColor(trophyColor(for: Int(standing.position)))
+                        .font(.system(size: 24))
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(standing.constructor.name)
+                            .font(.headline)
+                        Text("\(standing.points) Points")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
                     }
                 }
-            }
+        
+        }
             .navigationTitle("Constructor Standings")
-            .onAppear { vm.fetchConstructorStandings() }
+            .listStyle(.plain)
+    }
+        .onAppear {
+            vm.fetchConstructorStandings()
+        }
+}
+
+    private func trophyColor(for position: Int) -> Color {
+        switch position {
+        case 1: return .yellow     // Gold
+        case 2: return .gray       // Silver
+        case 3: return .orange     // Bronze
+        default: return .secondary
         }
     }
 }
 
-
 #Preview {
     ConstructorsListView()
 }
+
