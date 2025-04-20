@@ -8,78 +8,108 @@ enum APIError: Error {
     case invalidData
 }
 
-private struct ErgastResponse: Codable {
-    let MRData: MRData
+private struct ConstructorErgastResponse: Codable {
+    let MRData: ConstructorMRData
 }
 
-private struct MRData: Codable {
-    let StandingsTable: StandingsTable
+private struct ConstructorMRData: Codable {
+    let StandingsTable: ConstructorStandingsTable
 }
 
-private struct StandingsTable: Codable {
-    let StandingsLists: [StandingsList]
+private struct ConstructorStandingsTable: Codable {
+    let StandingsLists: [ConstructorStandingsList]
 }
 
-/// Manages all Ergast API calls.
+private struct DriverErgastResponse: Codable {
+    let MRData: DriverMRData
+}
+
+private struct DriverMRData: Codable {
+    let StandingsTable: DriverStandingsTable
+}
+
+private struct DriverStandingsTable: Codable {
+    let StandingsLists: [DriverStandingsList]
+}
+
+
+
+
 final class NetworkManager {
     static let shared = NetworkManager()
     private init() {}
 
-    /// Base URL for all Ergast F1 endpoints.
     private let baseURL = "https://ergast.com/api/f1/"
-
-    /// Path for the current constructor standings.
     private let constructorStandingsEndpoint = "current/constructorstandings.json"
+    private let driverStandingsEndpoint = "current/driverstandings.json"
 
-    /// Fetches the current constructor standings.
-    /// - Parameter completed: Returns a Result wrapping an array of `StandingsList` or an `APIError`.
     func fetchConstructorStandings(
-        completed: @escaping (Result<[StandingsList], APIError>) -> Void
+        completed: @escaping (Result<[ConstructorStandingsList], APIError>) -> Void
     ) {
         let urlString = baseURL + constructorStandingsEndpoint
         guard let url = URL(string: urlString) else {
-            print("[NetworkManager] Invalid URL: \(urlString)")
             completed(.failure(.invalidURL))
             return
         }
 
-        URLSession.shared.dataTask(with: URLRequest(url: url)) { data, response, error in
-
-            if let networkError = error {
-                print("[NetworkManager] Network request failed: \(networkError.localizedDescription)")
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            if let _ = error {
                 completed(.failure(.unableToComplete))
                 return
             }
 
-            guard let httpResp = response as? HTTPURLResponse else {
-                print("[NetworkManager] No HTTPURLResponse received: \(String(describing: response))")
-                completed(.failure(.invalidResponse))
-                return
-            }
-
-            guard httpResp.statusCode == 200 else {
-                print("[NetworkManager] Invalid response status code: \(httpResp.statusCode)")
+            guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
                 completed(.failure(.invalidResponse))
                 return
             }
 
             guard let data = data else {
-                print("[NetworkManager] No data returned from request.")
                 completed(.failure(.invalidData))
                 return
             }
 
             do {
                 let decoder = JSONDecoder()
-                let ergast = try decoder.decode(ErgastResponse.self, from: data)
-                let lists = ergast.MRData.StandingsTable.StandingsLists
-                completed(.success(lists))
+                let result = try decoder.decode(ConstructorErgastResponse.self, from: data)
+                completed(.success(result.MRData.StandingsTable.StandingsLists))
             } catch {
-                let dataString = String(data: data, encoding: .utf8) ?? "<unreadable data>"
-                print("[NetworkManager] JSON decode failed: \(error). Response data: \(dataString)")
                 completed(.failure(.invalidData))
             }
+        }.resume()
+    }
 
+    func fetchDriverStandings(
+        completed: @escaping (Result<[DriverStandingsList], APIError>) -> Void
+    ) {
+        let urlString = baseURL + driverStandingsEndpoint
+        guard let url = URL(string: urlString) else {
+            completed(.failure(.invalidURL))
+            return
+        }
+
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            if let _ = error {
+                completed(.failure(.unableToComplete))
+                return
+            }
+
+            guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
+                completed(.failure(.invalidResponse))
+                return
+            }
+
+            guard let data = data else {
+                completed(.failure(.invalidData))
+                return
+            }
+
+            do {
+                let decoder = JSONDecoder()
+                let result = try decoder.decode(DriverErgastResponse.self, from: data)
+                completed(.success(result.MRData.StandingsTable.StandingsLists))
+            } catch {
+                completed(.failure(.invalidData))
+            }
         }.resume()
     }
 }

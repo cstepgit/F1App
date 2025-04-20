@@ -1,4 +1,4 @@
-struct StandingsList: Codable {
+struct ConstructorStandingsList: Codable {
     let season: Int
     let round: Int
     let constructorStandings: [ConstructorStandings]
