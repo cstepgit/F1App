@@ -12,11 +12,11 @@ struct F1TabView: View {
         TabView {
             ConstructorsListView()
                 .tabItem {
-                    Label("Constructors", systemImage: "trophy")
+                    Label("Constructors", systemImage: "hammer")
                 }
             DriversListView()
                 .tabItem{
-                    Label("Drivers", systemImage: "trophy")
+                    Label("Drivers", systemImage: "person")
                 }
         }
     }

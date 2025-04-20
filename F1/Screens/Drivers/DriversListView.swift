@@ -9,7 +9,7 @@ import SwiftUI
 
 struct DriversListView: View {
     @StateObject private var vm = DriversViewModel()
-    
+
     var body: some View {
         NavigationView {
             List(vm.topDrivers, id: \.driver.driverId) { standing in
@@ -17,29 +17,40 @@ struct DriversListView: View {
                     Image(systemName: "trophy.fill")
                         .foregroundColor(trophyColor(for: Int(standing.position) ?? 0))
                         .font(.system(size: 24))
+
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(standing.driver.givenName)
-                            .font(.headline)
+                        HStack {
+                            Text("\(standing.driver.givenName) \(standing.driver.familyName)")
+                                .font(.headline)
+
+                            Spacer()
+
+                            Text(standing.driver.nationality)
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                        }
+
                         Text("\(standing.points) Points")
                             .font(.subheadline)
                             .foregroundColor(.gray)
                     }
                 }
-        
-        }
-            .navigationTitle("Constructor Standings")
+
+
+            }
+            .navigationTitle("Driver Standings")
             .listStyle(.plain)
-    }
+        }
         .onAppear {
             vm.fetchDriverStandings()
         }
-}
+    }
 
     private func trophyColor(for position: Int) -> Color {
         switch position {
-        case 1: return .yellow     // Gold
-        case 2: return .gray       // Silver
-        case 3: return .orange     // Bronze
+        case 1: return .yellow  // Gold
+        case 2: return .gray  // Silver
+        case 3: return .orange  // Bronze
         default: return .secondary
         }
     }
@@ -48,5 +59,3 @@ struct DriversListView: View {
 #Preview {
     DriversListView()
 }
-
-
